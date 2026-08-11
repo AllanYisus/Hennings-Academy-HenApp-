@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liderança - Hennings Academy</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { navy: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' }, mustard: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' } },
+                    animation: { 'fade-in': 'fadeIn 0.5s ease-out forwards', 'slide-up': 'slideUp 0.5s ease-out forwards' },
+                    keyframes: { fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } }, slideUp: { '0%': { opacity: 0, transform: 'translateY(20px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos Padrão -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; } 
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; } 
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
+        .tab-btn { @apply px-6 py-4 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all whitespace-nowrap flex items-center gap-2; }
+        .tab-active { @apply text-mustard-500 bg-mustard-500/10 border border-mustard-500/20 shadow-inner; }
+        select option { background-color: #0f172a; color: white; }
+        .progress-bar-striped { background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 1rem 1rem; }
+    </style>
+
+    <!-- Estilos Tailwind Processados pelo CDN -->
+    <style type="text/tailwindcss">
+        .input-clean { 
+            @apply w-full bg-[#0f172a]/50 border border-white/10 text-white rounded-2xl px-5 py-3.5 text-sm outline-none transition-all duration-300 placeholder-gray-500 backdrop-blur-md hover:border-white/20 focus:bg-[#0f172a]/80 focus:border-mustard-500/50 focus:shadow-[0_0_20px_rgba(245,158,11,0.15)]; 
+        }
+        .label-clean {
+            @apply block text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1 font-bold;
+        }
+    </style>
+</head>
+<body class="text-gray-300 antialiased h-screen flex flex-col selection:bg-mustard-500 selection:text-navy-950 overflow-hidden relative">
+
+    <!-- LUZES AMBIENTAIS (Glassmorphism) -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blue-600/10 rounded-full mix-blend-screen filter blur-[120px] opacity-80"></div>
+        <div class="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-indigo-800/10 rounded-full mix-blend-screen filter blur-[120px] opacity-80"></div>
+    </div>
+
+    <!-- OVERLAY DE CARREGAMENTO -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-navy-950/80 z-[999] flex flex-col items-center justify-center hidden backdrop-blur-md transition-all duration-300">
+        <div class="bg-navy-900/50 p-8 rounded-3xl border border-white/10 flex flex-col items-center shadow-2xl">
+            <i data-lucide="loader-2" class="w-10 h-10 animate-spin text-mustard-500 mb-4"></i>
+            <h2 id="loadingText" class="text-sm font-bold tracking-widest uppercase text-white">Processando...</h2>
+        </div>
+    </div>
+
+    <!-- HEADER DO SISTEMA -->
+    <header class="bg-[#02040a]/80 backdrop-blur-2xl border-b border-white/5 z-40 relative shadow-xl">
+        <div class="px-6 md:px-10 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-5">
+                <div class="p-3 bg-mustard-500/10 rounded-2xl border border-mustard-500/20 shadow-inner">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-mustard-500"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <h1 class="text-2xl font-black text-white tracking-widest uppercase">HENNINGS<span class="text-mustard-500">ACADEMY</span></h1>
+                        <span id="userRoleBadge" class="px-2 py-0.5 bg-mustard-500 text-navy-900 rounded-md text-[9px] font-black uppercase tracking-widest">LÍDER</span>
+                    </div>
+                    <p class="text-xs text-gray-400 font-medium tracking-wide mt-1">Bem-vindo(a), <span id="userNameDisplay" class="font-bold text-white"></span></p>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center flex-wrap">
+                <button onclick="HA.Api.fetchCloudData()" class="inline-flex items-center gap-2 bg-white/5 text-white border border-white/10 px-5 py-3 rounded-xl text-[10px] font-bold hover:bg-white/10 transition shadow-sm uppercase tracking-widest">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-mustard-500"></i> Sincronizar Nuvem
+                </button>
+                <button onclick="HA.Auth.logout()" class="inline-flex items-center gap-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-5 py-3 rounded-xl text-[10px] font-bold hover:bg-rose-500 hover:text-white transition shadow-sm uppercase tracking-widest">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sair
+                </button>
+            </div>
+        </div>
+        
+        <!-- ABAS NAVEGAÇÃO -->
+        <nav class="px-6 md:px-10 flex gap-4 overflow-x-auto custom-scroll pb-4">
+            <button onclick="HA.Lider.switchTab('view-dash')" id="tab-dash" class="tab-active tab-btn"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Visão Geral & Operação</button>
+            <button onclick="HA.Lider.switchTab('view-inbox')" id="tab-inbox" class="tab-btn relative"><i data-lucide="bell" class="w-4 h-4"></i> Caixa de Aprovações <span id="reqBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-black hidden shadow-md animate-bounce border-2 border-navy-900">0</span></button>
+        </nav>
+    </header>
+
+    <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 overflow-y-auto custom-scroll p-6 md:p-10 space-y-8 relative z-20">
+        
+        <!-- ============================================== -->
+        <!-- ABA 1: DASHBOARD E SOLICITAÇÃO                 -->
+        <!-- ============================================== -->
+        <div id="view-dash" class="animate-fade-in block max-w-[1400px] mx-auto space-y-8">
+            
+            <!-- PAINEL DE CONTROLE DE TROCAS -->
+            <div id="troca-panel" class="glass-card bg-navy-900/40 p-6 rounded-[2rem] border border-white/10 shadow-2xl flex items-center justify-between backdrop-blur-xl">
+                <div class="flex items-center gap-5">
+                    <div id="troca-icon-box" class="p-4 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl transition-colors"><i data-lucide="refresh-cw" class="w-7 h-7"></i></div>
+                    <div>
+                        <h3 class="text-sm font-black text-white uppercase tracking-widest">Vagas para Troca de Área</h3>
+                        <p class="text-[11px] text-gray-400 mt-1">Líderes possuem um limite máximo de 5 solicitações simultâneas em andamento.</p>
+                    </div>
+                </div>
+                <div class="text-right flex flex-col items-end">
+                    <div class="text-4xl font-black text-white leading-none tracking-tighter" id="trocas-used">0<span class="text-2xl text-gray-600 font-bold">/5</span></div>
+                    <div class="text-[9px] font-bold text-emerald-400 mt-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg uppercase tracking-widest" id="trocas-available">5 vagas disponíveis</div>
+                </div>
+            </div>
+
+            <!-- GRID PRINCIPAL -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- COLUNA ESQUERDA: SOLICITAR TREINAMENTO -->
+                <div class="lg:col-span-1">
+                    <div class="bg-navy-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white/5 shadow-2xl sticky top-0 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 to-indigo-400"></div>
+                        <h2 class="text-sm font-bold text-white mb-6 border-b border-white/5 pb-4 uppercase tracking-widest flex items-center gap-2"><div class="p-1.5 bg-indigo-500/20 rounded-lg"><i data-lucide="file-plus" class="w-4 h-4 text-indigo-400"></i></div> Solicitar Troca de Área</h2>
+                        
+                        <form id="formRequest" onsubmit="HA.Lider.solicitarTreinamento(event)" class="space-y-5">
+                            <div>
+                                <label class="label-clean">Colaborador da Equipe</label>
+                                <select id="reqColab" required class="input-clean cursor-pointer"></select>
+                            </div>
+                            <div>
+                                <label class="label-clean">Setor Alvo</label>
+                                <select id="reqSector" required onchange="HA.Lider.updateAreasReq()" class="input-clean cursor-pointer">
+                                    <option value="Recebimento">Recebimento</option><option value="Armazenagem">Armazenagem</option>
+                                    <option value="Separação">Separação</option><option value="Expedição">Expedição</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-clean">Área Específica</label>
+                                <select id="reqArea" required class="input-clean cursor-pointer"></select>
+                            </div>
+                            <div>
+                                <label class="label-clean">Observação DHO (Opcional)</label>
+                                <textarea id="reqObs" rows="3" class="input-clean resize-none" placeholder="Ex: O colaborador cobrirá férias..."></textarea>
+                            </div>
+                            <div class="pt-2">
+                                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition shadow-[0_10px_30px_-10px_rgba(79,70,229,0.6)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                                    Enviar Pedido DHO <i data-lucide="send" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- COLUNA DIREITA: TABELA E EQUIPE -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Treinamentos Ativos -->
+                    <div class="bg-navy-900/60 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/5 overflow-hidden">
+                        <div class="bg-white/5 px-8 py-6 border-b border-white/5 flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-white tracking-widest uppercase flex items-center gap-3"><div class="p-1.5 bg-mustard-500/20 rounded-lg"><i data-lucide="activity" class="w-4 h-4 text-mustard-500"></i></div> Operações em Andamento</h2>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-gray-300">
+                                <thead class="bg-black/20 text-gray-500 text-[9px] uppercase tracking-widest border-b border-white/5">
+                                    <tr><th class="px-8 py-4 font-bold">Colaborador</th><th class="px-8 py-4 font-bold">Progresso Atual</th><th class="px-8 py-4 font-bold text-right">Ação</th></tr>
+                                </thead>
+                                <tbody id="table-ativos" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Integrantes (CABEÇALHO NOVO COM O BOTÃO) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-5 ml-2">
+                            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-400"></i> Integrantes da Minha Equipe</h2>
+                            <button onclick="HA.Lider.openNovoColabModal()" class="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest transition flex items-center gap-1.5 shadow-sm hover:scale-105">
+                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Adicionar Integrante
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5" id="team-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- ABA 2: INBOX (APROVAÇÕES)                      -->
+        <!-- ============================================== -->
+        <div id="view-inbox" class="animate-fade-in hidden max-w-4xl mx-auto">
+            <h2 class="text-2xl font-black text-white tracking-wide mb-2 flex items-center gap-3"><div class="p-2 bg-mustard-500/20 rounded-xl"><i data-lucide="bell-ring" class="text-mustard-500 w-6 h-6"></i></div> Caixa de Aprovações</h2>
+            <p class="text-[11px] text-gray-400 mb-10 ml-14 uppercase tracking-widest font-bold">Gerencie as datas sugeridas pelos Facilitadores.</p>
+            
+            <div id="inbox-list" class="space-y-6"></div>
+        </div>
+
+    </main>
+
+    <!-- CONTAINERS DOS MODAIS REUTILIZÁVEIS -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-navy-950/90 flex items-center justify-center hidden z-50 p-4 backdrop-blur-md animate-fade-in"></div>
+    <div id="modalHistory" class="fixed inset-0 bg-navy-950/90 flex items-center justify-center hidden z-50 p-4 backdrop-blur-md animate-fade-in"></div>
+
+    <!-- MODAL: NOVO COLABORADOR (EXCLUSIVO DO LÍDER) -->
+    <div id="modalNovoColab" class="fixed inset-0 bg-navy-950/90 flex items-center justify-center hidden z-50 p-4 backdrop-blur-md animate-fade-in">
+        <div class="glass-card bg-navy-900 rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-white/10 animate-slide-up relative">
+            <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent pointer-events-none"></div>
+            
+            <div class="bg-navy-950 px-8 py-6 flex justify-between items-center border-b border-white/10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-indigo-400 flex items-center gap-3"><div class="p-2 bg-indigo-500/20 rounded-lg"><i data-lucide="user-plus" class="w-4 h-4 text-indigo-400"></i></div> Aviso de Novo Integrante</h2>
+                <button type="button" onclick="HA.UI.closeModal('modalNovoColab')" class="text-gray-500 hover:text-white transition bg-white/5 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            
+            <form onsubmit="HA.Lider.saveNovoColab(event)" class="p-8 space-y-6">
+                <div class="bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-2xl">
+                    <p class="text-[10px] text-indigo-300 leading-relaxed text-center font-bold tracking-wide">Ao registrar o colaborador, o sistema o adicionará à base e criará automaticamente uma ficha de <span class="text-white">Primeira Entrada</span> no DHO.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div><label class="label-clean">Matrícula (Crachá)</label><input type="number" id="nc-id" required class="input-clean"></div>
+                    <div><label class="label-clean">Nome Completo</label><input type="text" id="nc-name" required class="input-clean"></div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="label-clean">Setor Base</label>
+                        <select id="nc-sector" onchange="HA.Lider.updateAreasNovoColab()" required class="input-clean cursor-pointer">
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="Recebimento">Recebimento</option>
+                            <option value="Armazenagem">Armazenagem</option>
+                            <option value="Separação">Separação</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Produção">Produção (Sem Ficha)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-clean">Área de Início</label>
+                        <select id="nc-area" required class="input-clean cursor-pointer"></select>
+                    </div>
+                </div>
+                
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_-10px_rgba(79,70,229,0.5)] flex justify-center items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Registrar e Notificar DHO</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS MODULARES -->
+    <script src="js/core/app.config.js"></script>
+    <script src="js/core/api.service.js"></script>
+    <script src="js/core/auth.service.js"></script>
+    <script src="js/components/ui.components.js"></script>
+    
+    <!-- LÓGICA DO LÍDER -->
+    <script>
+        // Declaramos as URLs oficiais do Power Automate aqui para o processo "2-em-1"
+        const URL_SALVAR_COLABORADOR = "https://default863b40a279194b128e0e7678554bee.21.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/1b1b45bc522943dea6a7030485f680f6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=FYOgLPg178X4sEFRmrgNYi9zsVwGFLpr05BkGbE6XtI";
+        const URL_SALVAR_TREINAMENTO = "https://default863b40a279194b128e0e7678554bee.21.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/7beb1cb49aeb43ae97b3eebe11b4bbcd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=K8zXArbmlM1roTfmd63pOKa54Enr8J7rzMVwQndiuao";
+
+        window.HA = window.HA || {};
+
+        HA.Lider = {
+            init() {
+                // Segurança
+                const uid = sessionStorage.getItem('ha_user_id');
+                const urole = sessionStorage.getItem('ha_user_role');
+                if(!uid || (!urole.includes('Lider') && !urole.includes('Supervisor'))) {
+                    window.location.href = 'index.html'; return;
+                }
+
+                document.getElementById('userNameDisplay').innerText = sessionStorage.getItem('ha_user_name');
+                document.getElementById('userRoleBadge').innerText = urole === 'Supervisor' ? 'SUPERVISOR' : 'LÍDER OPERACIONAL';
+                
+                if(urole === 'Supervisor') document.getElementById('troca-panel').classList.add('hidden');
+
+                this.updateAreasReq();
+            },
+
+            switchTab(viewId) {
+                ['view-dash', 'view-inbox'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                ['tab-dash', 'tab-inbox'].forEach(id => {
+                    document.getElementById(id).classList.remove('tab-active', 'text-mustard-500', 'bg-mustard-500/10', 'border', 'border-mustard-500/20');
+                    document.getElementById(id).classList.add('text-gray-500');
+                });
+                
+                document.getElementById(viewId).classList.remove('hidden');
+                document.getElementById(viewId.replace('view', 'tab')).classList.add('tab-active', 'text-mustard-500', 'bg-mustard-500/10', 'border', 'border-mustard-500/20');
+                document.getElementById(viewId.replace('view', 'tab')).classList.remove('text-gray-500');
+            },
+
+            getFilteredTrainings() { return HA.State.currentUser.role === 'Supervisor' ? [...HA.State.trainings] : HA.State.trainings.filter(t => t.leader && t.leader.includes(HA.State.currentUser.name.split(' ')[0])); },
+            getFilteredTeam() { return HA.State.currentUser.role === 'Supervisor' ? [...HA.State.colabs] : HA.State.colabs.filter(c => c.leader && c.leader.includes(HA.State.currentUser.name.split(' ')[0])); },
+            
+            getProgress(stage) {
+                if (!stage) return { pct: 0, color: 'bg-gray-500' };
+                if (stage === 'Solicitado') return { pct: 5, color: 'bg-indigo-500' };
+                if (stage.includes('1ª Etapa')) return { pct: 20, color: 'bg-blue-500' };
+                if (stage.includes('2ª Etapa')) return { pct: 40, color: 'bg-blue-400' };
+                if (stage.includes('Acompanhamento')) return { pct: 60, color: 'bg-mustard-500' };
+                if (stage.includes('Aguardando')) return { pct: 80, color: 'bg-mustard-400' };
+                if (stage.includes('Finalizado')) return { pct: 100, color: 'bg-emerald-500' };
+                if (stage.includes('Reprovado')) return { pct: 100, color: 'bg-rose-500' };
+                return { pct: 10, color: 'bg-gray-500' };
+            },
+
+            renderDash() {
+                const myTeam = this.getFilteredTeam().filter(c => c.status !== 'Desligado');
+                const myTrainings = this.getFilteredTrainings();
+                
+                // Select de Solicitação (Agora com ID para evitar nomes repetidos)
+                const selColab = document.getElementById('reqColab'); selColab.innerHTML = '<option value="" disabled selected>Selecionar Colaborador...</option>';
+                myTeam.forEach(c => { selColab.innerHTML += `<option value="${c.id}">${c.id} - ${c.name}</option>`; });
+
+                // Vagas Troca de Área
+                if(HA.State.currentUser.role !== 'Supervisor') {
+                    const myActiveTrocas = myTrainings.filter(t => t.type === 'Troca de Área' && !t.stage.includes('Finalizado') && !t.stage.includes('Reprovado'));
+                    const trocasCount = myActiveTrocas.length; const trocasLeft = 5 - trocasCount;
+                    document.getElementById('trocas-used').innerHTML = `${trocasCount}<span class="text-2xl text-gray-600 font-bold">/5</span>`;
+                    const availText = document.getElementById('trocas-available'); const iconBox = document.getElementById('troca-icon-box');
+                    if(trocasLeft <= 0) { availText.innerText = `0 vagas! Limite atingido.`; availText.className = "text-[9px] font-bold text-rose-400 mt-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg uppercase tracking-widest"; iconBox.className = "p-4 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl transition-colors"; } 
+                    else { availText.innerText = `${trocasLeft} vagas disponíveis`; availText.className = "text-[9px] font-bold text-emerald-400 mt-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg uppercase tracking-widest"; iconBox.className = "p-4 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl transition-colors"; }
+                }
+
+                // Tabela Ativos
+                const tbody = document.getElementById('table-ativos'); tbody.innerHTML = '';
+                let actives = myTrainings.filter(t => t.stage !== 'Finalizado' && t.stage !== 'Reprovado');
+
+                if(actives.length === 0) tbody.innerHTML = `<tr><td colspan="3" class="px-8 py-10 text-center text-gray-500 font-medium">Nenhuma operação em andamento para sua equipe.</td></tr>`;
+                
+                actives.forEach(t => {
+                    const prog = this.getProgress(t.stage);
+                    const badgeType = t.type === 'Troca de Área' ? 'indigo' : 'blue';
+                    let stDisp = t.stage === 'Solicitado' ? '<span class="text-indigo-400 animate-pulse">Aguardando Início</span>' : t.stage;
+                    
+                    let actBtn = `<button onclick="HA.Lider.openDetails(${t.id})" class="text-mustard-400 hover:text-white p-2.5 bg-white/5 rounded-xl border border-white/10 transition shadow-sm" title="Acompanhar"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
+                    if(t.accRequestStatus === 'Aguardando Líder') {
+                        actBtn = `<button onclick="HA.Lider.openDetails(${t.id})" class="text-white bg-mustard-600 hover:bg-mustard-500 py-2.5 px-4 rounded-xl border border-mustard-400 transition shadow-[0_0_15px_rgba(245,158,11,0.3)] text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Responder</button>`;
+                    }
+
+                    tbody.innerHTML += `
+                    <tr class="transition hover:bg-white/5 border-b border-white/5">
+                        <td class="px-8 py-5">
+                            <div class="font-bold text-white text-sm mb-1">${t.colabName}</div>
+                            <div class="text-[10px] text-gray-500 font-mono uppercase tracking-widest flex items-center gap-2">ID: ${t.userId} <span class="text-${badgeType}-400 bg-${badgeType}-500/10 px-2 py-0.5 rounded border border-${badgeType}-500/20">${t.type}</span></div>
+                        </td>
+                        <td class="px-8 py-5 w-1/2">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-tight">${stDisp}<br><span class="text-white opacity-50">${t.sector} > ${t.area}</span></span>
+                                <span class="font-black text-white text-xs bg-white/10 px-2 py-1 rounded-md">${prog.pct}%</span>
+                            </div>
+                            <div class="w-full bg-navy-950 rounded-full h-2 overflow-hidden border border-white/5"><div class="${prog.color} h-full transition-all duration-500 progress-bar-striped animate-[pulse_2s_ease-in-out_infinite]" style="width: ${prog.pct}%"></div></div>
+                        </td>
+                        <td class="px-8 py-5 text-right flex flex-col items-end gap-2">
+                            <div class="font-mono text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 px-2 py-1 rounded">Prev: ${HA.UI.formatDateBR(t.endDate).split(' ')[0]}</div>
+                            ${actBtn}
+                        </td>
+                    </tr>`;
+                });
+
+                // Validações Pendentes (Treinamentos Finalizados sem aprovação)
+                let pendingVals = myTrainings.filter(t => t.stage === 'Finalizado' && !t.liderValidation);
+                pendingVals.forEach(t => {
+                    tbody.innerHTML += `
+                    <tr class="transition bg-emerald-900/10 hover:bg-emerald-900/20 border-b border-emerald-500/20">
+                        <td class="px-8 py-5">
+                            <div class="font-bold text-emerald-400 text-sm mb-1 flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4"></i> ${t.colabName}</div>
+                            <div class="text-[10px] text-gray-500 font-mono uppercase tracking-widest">ID: ${t.userId}</div>
+                        </td>
+                        <td class="px-8 py-5 w-1/2">
+                            <span class="font-bold text-[10px] text-white uppercase tracking-widest leading-tight">${t.sector} > ${t.area}</span>
+                            <div class="mt-2"><span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[9px] font-bold uppercase tracking-widest inline-block shadow-sm">Aguardando Validação</span></div>
+                        </td>
+                        <td class="px-8 py-5 text-right flex flex-col items-end justify-center">
+                            <button onclick="HA.Lider.openDetails(${t.id})" class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black text-[9px] px-4 py-2.5 rounded-xl shadow-[0_10px_20px_-5px_rgba(234,88,12,0.5)] transition uppercase tracking-widest animate-pulse flex items-center gap-1.5 hover:scale-105"><i data-lucide="clipboard-signature" class="w-3.5 h-3.5"></i> Validar Prática</button>
+                        </td>
+                    </tr>`;
+                });
+
+                // Equipe Grid
+                const grid = document.getElementById('team-grid'); grid.innerHTML = '';
+                myTeam.forEach(c => {
+                    const img = c.photo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E";
+                    grid.innerHTML += `
+                    <div class="bg-navy-900/60 backdrop-blur-md p-5 rounded-[2rem] border border-white/5 shadow-xl flex items-center gap-4 hover:border-white/20 hover:bg-navy-800 transition-all cursor-pointer group" onclick="HA.UI.openHistory('${c.id}')">
+                        <img src="${img}" class="w-14 h-14 rounded-full object-cover border-2 border-white/10 group-hover:scale-105 transition-transform shadow-md">
+                        <div>
+                            <div class="text-sm font-bold text-white leading-tight mb-1 group-hover:text-mustard-400 transition-colors">${c.name}</div>
+                            <div class="text-[9px] font-mono text-gray-500 uppercase tracking-widest bg-black/30 px-2 py-0.5 rounded inline-block border border-white/5">ID: ${c.id}</div>
+                        </div>
+                    </div>`;
+                });
+
+                lucide.createIcons();
+            },
+
+            renderInbox() {
+                const list = document.getElementById('inbox-list'); list.innerHTML = '';
+                const myTrainings = this.getFilteredTrainings();
+                const pendingAcc = myTrainings.filter(t => t.accRequestStatus === 'Aguardando Líder');
+                
+                const badge = document.getElementById('reqBadge');
+                if(pendingAcc.length > 0) { badge.innerText = pendingAcc.length; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+
+                if(pendingAcc.length === 0) {
+                    list.innerHTML = `<div class="p-10 text-center text-gray-500 bg-navy-900/40 backdrop-blur-md rounded-[2rem] border border-white/5 text-sm font-bold shadow-inner">✅ Sua caixa de aprovações está limpa.</div>`; return;
+                }
+
+                pendingAcc.forEach(t => {
+                    list.innerHTML += `
+                    <div class="glass-card bg-navy-900/80 p-8 rounded-[2rem] border-l-4 border-l-mustard-500 shadow-2xl border border-white/10 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-mustard-500/10 rounded-bl-full pointer-events-none"></div>
+                        <div class="flex justify-between items-start mb-5 relative z-10">
+                            <div><h3 class="font-black text-white text-xl">${t.colabName}</h3><p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Setor: <span class="text-white">${t.area}</span></p></div>
+                            <span class="bg-mustard-500/20 text-mustard-400 border border-mustard-500/30 text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-md">Aguardando Sua Resposta</span>
+                        </div>
+                        <p class="text-sm text-gray-300 bg-black/40 p-5 rounded-2xl border border-white/5 mb-6 leading-relaxed relative z-10 shadow-inner">
+                            O facilitador <b class="text-white">${t.facilitator.split(' ')[0]}</b> sugeriu o dia <b class="text-mustard-400 font-black text-base ml-1">${HA.UI.formatDateBR(t.accRequestDate).split(' ')[0]}</b> para que o colaborador seja acompanhado e avaliado na prática.
+                        </p>
+                        <div class="flex gap-4 relative z-10">
+                            <button onclick="HA.Lider.responderAcompanhamento('${t.id}', 'Aprovado')" class="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black py-4 rounded-xl shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> Confirmar Data</button>
+                            <button onclick="HA.Lider.responderAcompanhamento('${t.id}', 'Recusado')" class="flex-1 bg-rose-600/20 text-rose-400 border border-rose-500/30 font-black py-4 rounded-xl shadow-md hover:bg-rose-500 hover:text-white hover:scale-[1.02] active:scale-[0.98] transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"><i data-lucide="x" class="w-4 h-4"></i> Recusar Data</button>
+                        </div>
+                    </div>`;
+                });
+                lucide.createIcons();
+            },
+
+            // --- AÇÕES DO LÍDER ---
+            updateAreasReq() {
+                const s = document.getElementById('reqSector').value; const a = document.getElementById('reqArea'); a.innerHTML = '';
+                if(HA.Constants.Sectors[s]) HA.Constants.Sectors[s].forEach(ar => a.innerHTML += `<option value="${ar}">${ar}</option>`);
+            },
+
+            solicitarTreinamento(e) {
+                e.preventDefault();
+                const cid = document.getElementById('reqColab').value; 
+                const c = HA.State.colabs.find(x => x.id === cid); if(!c) return;
+                
+                const hasOrigin = HA.State.trainings.some(t => t.userId === cid && (t.type === 'Primeira Entrada' || t.stage === 'Finalizado'));
+                const tType = hasOrigin ? 'Troca de Área' : 'Primeira Entrada';
+                
+                if(tType === 'Troca de Área' && HA.State.currentUser.role !== 'Supervisor') {
+                    const act = HA.State.trainings.filter(t => t.leader === c.leader && t.type === 'Troca de Área' && t.stage !== 'Finalizado' && t.stage !== 'Reprovado');
+                    if(act.length >= 5) return alert("Atenção: Limite máximo de 5 solicitações ativas de Troca de Área atingido.");
+                }
+
+                const obsLider = document.getElementById('reqObs').value.trim();
+                let probs = []; if(obsLider) probs.push({ date: new Date().toISOString(), text: `OBS Líder na Solicitação: ${obsLider}` });
+
+                const tr = {
+                    id: Date.now(), spId: "CRIAR", userId: c.id, colabName: c.name, leader: c.leader, type: tType,
+                    sector: document.getElementById('reqSector').value, area: document.getElementById('reqArea').value,
+                    facilitator: 'A Definir', stage: 'Solicitado', startDate: '', endDate: '',
+                    problemsLog: probs, accRequestStatus: 'Pendente'
+                };
+                
+                document.getElementById('formRequest').reset();
+                HA.Api.safeSave(tr).then(success => { if(success) alert("✅ Pedido enviado com sucesso para a equipe DHO."); });
+            },
+
+            responderAcompanhamento(id, resposta) {
+                const t = HA.State.trainings.find(x => x.id.toString() === id.toString()); if(!t) return;
+                t.accRequestStatus = resposta;
+                if(resposta === 'Recusado') {
+                    const arr = Array.isArray(t.problemsLog) ? t.problemsLog : [];
+                    arr.unshift({ date: new Date().toISOString(), text: `Líder recusou a data de acompanhamento sugerida (${HA.UI.formatDateBR(t.accRequestDate).split(' ')[0]}).` });
+                    t.problemsLog = arr; t.accRequestDate = ""; 
+                }
+                HA.Api.safeSave(t).then(() => { this.switchTab('view-dash'); }); 
+            },
+
+            validarPratica(id) {
+                const t = HA.State.trainings.find(x => x.id.toString() === id.toString()); if(!t) return;
+                if(confirm(`Você atesta sob sua responsabilidade que ${t.colabName} está apto(a) a operar no setor após o Treinamento DHO?`)) {
+                    t.liderValidation = "Aprovado (Apto p/ Operação)";
+                    HA.Api.safeSave(t).then(() => HA.UI.closeModal('modalDetalhes'));
+                }
+            },
+
+            openDetails(id) {
+                const t = HA.State.trainings.find(x => x.id.toString() === id.toString()); if(!t) return;
+                
+                let probsHtml = ''; let arrProbs = Array.isArray(t.problemsLog) ? t.problemsLog : [];
+                if(arrProbs.length === 0) probsHtml = '<p class="text-[10px] text-gray-500 italic p-4 text-center">Nenhuma ocorrência registrada pelo DHO.</p>';
+                else {
+                    probsHtml = `<div class="space-y-3">`;
+                    arrProbs.forEach(p => { probsHtml += `<div class="flex gap-4 bg-white/5 p-4 rounded-2xl border border-white/5"><div class="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1 flex-shrink-0 shadow-[0_0_10px_rgba(244,63,94,0.8)]"></div><div><p class="text-[9px] text-gray-500 font-mono mb-1">${HA.UI.formatDateBR(p.date)}</p><p class="text-xs text-gray-300 leading-tight">${p.text}</p></div></div>`; });
+                    probsHtml += `</div>`;
+                }
+
+                const html = `
+                    <div class="glass-card bg-navy-900 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] w-full max-w-4xl max-h-[95vh] flex flex-col border border-white/10 animate-slide-up relative overflow-hidden">
+                        <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-mustard-500/50 to-transparent"></div>
+                        
+                        <div class="bg-navy-950 text-white px-8 py-6 flex justify-between items-center border-b border-white/5">
+                            <h2 class="text-sm font-black flex items-center gap-3 uppercase tracking-widest text-mustard-500"><div class="p-1.5 bg-mustard-500/20 rounded-lg"><i data-lucide="file-text" class="w-4 h-4 text-mustard-500"></i></div> Dossiê de Treinamento DHO</h2>
+                            <button onclick="HA.UI.closeModal('modalDetalhes')" class="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full transition border border-transparent hover:border-white/10"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        </div>
+                        
+                        <div class="p-8 overflow-y-auto custom-scroll bg-[#020617]/50 flex-1">
+                            <div class="flex justify-between items-start border-b border-white/10 pb-6 mb-8 relative">
+                                <div>
+                                    <h3 class="text-3xl font-black text-white">${t.colabName}</h3>
+                                    <p class="text-[11px] text-gray-400 font-mono mt-2 bg-black/40 inline-block px-3 py-1 rounded-lg border border-white/5">ID: ${t.userId} <span class="mx-2 text-white/20">|</span> Destino: <span class="text-mustard-500 font-bold">${t.area}</span></p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-block bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-md">${t.stage}</span>
+                                    <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-bold">Facilitador: <span class="text-white">${t.facilitator.split(' ')[0]}</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="bg-navy-900/60 border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-md">
+                                        <h4 class="text-[10px] font-black text-mustard-500 uppercase tracking-widest flex items-center gap-2 mb-4 border-b border-white/5 pb-3"><i data-lucide="book-open" class="w-4 h-4 text-mustard-500"></i> Relatório Teórico DHO</h4>
+                                        <p class="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed bg-black/20 p-4 rounded-2xl shadow-inner border border-white/5 min-h-[100px]">${t.teoNotes || '<span class="text-gray-500 italic font-medium">Ainda não preenchido pelo DHO.</span>'}</p>
+                                    </div>
+                                    <div class="bg-navy-900/60 border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-md">
+                                        <h4 class="text-[10px] font-black text-mustard-500 uppercase tracking-widest flex items-center gap-2 mb-4 border-b border-white/5 pb-3"><i data-lucide="wrench" class="w-4 h-4 text-mustard-500"></i> Relatório Prático DHO</h4>
+                                        <p class="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed bg-black/20 p-4 rounded-2xl shadow-inner border border-white/5 min-h-[100px]">${t.praNotes || '<span class="text-gray-500 italic font-medium">Ainda não preenchido pelo DHO.</span>'}</p>
+                                    </div>
+                                </div>
+                                <div class="bg-navy-900/60 border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-md">
+                                    <h4 class="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-2 mb-4 border-b border-white/5 pb-3"><i data-lucide="message-square-warning" class="w-4 h-4 text-rose-400"></i> Diário de Ocorrências e Atrasos</h4>
+                                    ${probsHtml}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-navy-950 border-t border-white/5 p-6 flex justify-end gap-4 z-10" id="modalFooterActions"></div>
+                    </div>
+                `;
+                
+                const modal = document.getElementById('modalDetalhes');
+                modal.innerHTML = html;
+                
+                const footer = document.getElementById('modalFooterActions');
+                if(t.stage === 'Finalizado' && !t.liderValidation && HA.State.currentUser.role !== 'Supervisor') {
+                    footer.innerHTML = `
+                        <button onclick="HA.UI.closeModal('modalDetalhes')" class="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-2xl text-sm font-bold transition border border-white/10">Fechar</button>
+                        <button onclick="HA.Lider.validarPratica('${t.id}')" class="px-8 py-3.5 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition shadow-[0_10px_20px_-5px_rgba(234,88,12,0.6)] animate-pulse flex items-center gap-2"><i data-lucide="clipboard-signature" class="w-4 h-4"></i> Atestar Aptidão Prática</button>
+                    `;
+                } else { 
+                    footer.innerHTML = `<button onclick="HA.UI.closeModal('modalDetalhes')" class="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition border border-white/10 w-full md:w-auto shadow-md hover:shadow-lg">Fechar Dossiê</button>`; 
+                }
+
+                modal.classList.remove('hidden'); modal.classList.add('flex'); lucide.createIcons();
+            },
+
+            // ================= NOVO COMBO: REGISTRAR COLAB + CRIAR TREINAMENTO =================
+            openNovoColabModal() {
+                document.getElementById('nc-id').value = '';
+                document.getElementById('nc-name').value = '';
+                document.getElementById('nc-sector').value = '';
+                document.getElementById('nc-area').innerHTML = '';
+                document.getElementById('modalNovoColab').classList.remove('hidden');
+                document.getElementById('modalNovoColab').classList.add('flex');
+            },
+
+            updateAreasNovoColab() {
+                const s = document.getElementById('nc-sector').value; 
+                const a = document.getElementById('nc-area'); 
+                a.innerHTML = '';
+                if(HA.Constants.Sectors[s]) {
+                    HA.Constants.Sectors[s].forEach(ar => a.innerHTML += `<option value="${ar}">${ar}</option>`);
+                } else {
+                    a.innerHTML = `<option value="${s}">${s}</option>`; // Caso escolha "Produção" (que não tem áreas)
+                }
+            },
+
+            async saveNovoColab(e) {
+                e.preventDefault();
+                
+                const cid = document.getElementById('nc-id').value.trim();
+                const cname = document.getElementById('nc-name').value.trim();
+                const csector = document.getElementById('nc-sector').value;
+                const carea = document.getElementById('nc-area').value || csector;
+                const cleader = HA.State.currentUser.name.split(' ')[0]; // O líder atual logado
+
+                // Trava de segurança para não duplicar o crachá
+                if(HA.State.colabs.some(x => x.id === cid)) {
+                    return alert("Atenção: Essa matrícula já está cadastrada na base de dados da Hennings.");
+                }
+
+                HA.Api.showLoad("Registrando na Base e Criando Ficha no DHO...");
+
+                // Payload 1: Cria o colaborador na Tabela "ColaboradoresData"
+                const payloadColab = { 
+                    spId: "CRIAR", 
+                    matricula: cid, 
+                    treinamentosFinalizados: csector, 
+                    nome: cname, 
+                    lider: cleader, 
+                    status: "Ativo", 
+                    foto: "" 
+                };
+
+                // Payload 2: Cria a Ficha em "TreinamentosData" só se não for Produção direta
+                const payloadTrain = {
+                    spId: "CRIAR",
+                    solicitante: cleader,
+                    tipoTreinamento: "Primeira Entrada",
+                    status: "Solicitado",
+                    matricula: cid,
+                    colaborador: cname,
+                    setorOrigem: "-",
+                    setorSolicitado: carea,
+                    dataInicio: "", dataFim: "", dataFinalizacao: "",
+                    etapa: "Solicitado",
+                    notaFinal: "0",
+                    obsTeorico: "",
+                    obsAcompanhamento: "{}", // Metadata em branco
+                    problemas: "[]",
+                    facilitador: "A Definir",
+                    agendamentoData: "", agendamentoStatus: "Pendente",
+                    teoricoCheck: "Não", praticoCheck: "Não", obsLider: "",
+                    ID_Ficha: Date.now().toString()
+                };
+
+                try {
+                    // Executamos as duas chamadas para o Power Automate (COMBO 2 em 1)
+                    await fetch(URL_SALVAR_COLABORADOR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadColab) });
+                    
+                    if(csector !== 'Produção') {
+                        await fetch(URL_SALVAR_TREINAMENTO, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadTrain) });
+                    }
+                    
+                    HA.UI.closeModal('modalNovoColab');
+                    HA.Api.fetchCloudData(true);
+                    
+                    setTimeout(() => { 
+                        HA.Api.hideLoad(); 
+                        alert("✅ Integrante registrado e ficha DHO solicitada com sucesso!"); 
+                    }, 2000);
+
+                } catch(err) {
+                    // Bypass CORS Mágico do navegador
+                    if(err.name === 'TypeError' || err.message.includes('Failed to fetch')) {
+                        HA.UI.closeModal('modalNovoColab');
+                        setTimeout(() => { 
+                            HA.Api.fetchCloudData(true);
+                            HA.Api.hideLoad();
+                            alert("✅ Integrante registrado e ficha DHO solicitada com sucesso!");
+                        }, 1500);
+                    } else {
+                        HA.Api.hideLoad(); 
+                        alert(`Falha no Power Automate.\nDetalhes: ${err.message}`); 
+                    }
+                }
+            }
+        };
+
+        // GATILHO MÁGICO
+        document.addEventListener('SystemReady', () => {
+            HA.Lider.init();
+            HA.Lider.renderDash();
+            HA.Lider.renderInbox();
+        });
+    </script>
+</body>
+</html>
