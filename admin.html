@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Hennings Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { navy: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' }, mustard: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' } },
+                    animation: { 
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards', 
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'blob': 'blob 10s infinite alternate',
+                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    },
+                    keyframes: { 
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } }, 
+                        slideUp: { '0%': { opacity: 0, transform: 'translateY(40px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        blob: { '0%': { transform: 'translate(0px, 0px) scale(1)' }, '33%': { transform: 'translate(30px, -50px) scale(1.1)' }, '66%': { transform: 'translate(-20px, 20px) scale(0.9)' }, '100%': { transform: 'translate(0px, 0px) scale(1)' } },
+                        pulseGlow: { '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 10px rgba(225,29,72,0.5))' }, '50%': { opacity: .7, filter: 'drop-shadow(0 0 2px rgba(225,29,72,0.2))' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; overflow: hidden; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; } 
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; } 
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .tab-active { @apply border-b-2 border-mustard-500 text-mustard-400 bg-mustard-500/10 shadow-[inset_0_-2px_10px_rgba(245,158,11,0.1)]; }
+        select option { background-color: #0f172a; color: white; }
+    </style>
+
+    <style type="text/tailwindcss">
+        .input-clean { @apply w-full bg-white/5 border border-white/10 text-white rounded-2xl px-5 py-3.5 text-sm outline-none transition-all duration-300 placeholder-gray-500 backdrop-blur-md hover:border-white/20 hover:bg-white/10 focus:bg-white/10 focus:border-rose-500/50 focus:shadow-[0_0_20px_rgba(225,29,72,0.15)]; }
+        .label-clean { @apply block text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1 font-bold; }
+    </style>
+</head>
+<body class="text-gray-300 antialiased h-screen flex flex-col selection:bg-rose-500 selection:text-white">
+
+    <!-- LUZES AMBIENTAIS -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-rose-600/10 rounded-full mix-blend-screen filter blur-[120px] opacity-80 animate-blob"></div>
+        <div class="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-blue-800/10 rounded-full mix-blend-screen filter blur-[120px] opacity-80 animate-blob" style="animation-delay: 2s;"></div>
+    </div>
+
+    <!-- OVERLAY CARREGAMENTO -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-navy-950/80 z-[999] flex flex-col items-center justify-center hidden backdrop-blur-xl transition-all">
+        <div class="bg-navy-900/50 p-10 rounded-3xl border border-white/10 flex flex-col items-center shadow-2xl animate-slide-up">
+            <i data-lucide="cpu" class="w-12 h-12 text-rose-500 mb-4 animate-pulse-glow"></i>
+            <h2 id="loadingText" class="text-xs font-black tracking-[0.2em] uppercase text-white bg-clip-text text-transparent bg-gradient-to-r from-rose-400 to-rose-600">Acessando Mainframe...</h2>
+        </div>
+    </div>
+
+    <!-- HEADER GLASSMORPHISM -->
+    <header class="bg-navy-950/60 backdrop-blur-2xl border-b border-white/10 z-40 relative shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+        <div class="px-8 py-5 flex justify-between items-center gap-4">
+            <div class="flex items-center hover:scale-105 transition-transform duration-300 cursor-default">
+                <img src="assets/logo.png" alt="Hennings Academy" class="h-8 md:h-9 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" onerror="this.outerHTML='<h1 class=\\'text-2xl font-black text-white tracking-widest\\'>HENNINGS<span class=\\'text-rose-500\\'>ADMIN</span></h1>';">
+            </div>
+            <div class="flex items-center gap-5">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-black text-white leading-tight tracking-wide" id="userNameDisplay">Deus da TI</p>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-rose-500 animate-pulse">Acesso Master</span>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500/20 to-transparent text-rose-400 border border-rose-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(225,29,72,0.3)] hover:rotate-12 transition-transform duration-500"><i data-lucide="shield-alert" class="w-6 h-6"></i></div>
+                <div class="flex gap-2 ml-4 border-l border-white/10 pl-6">
+                    <button onclick="App.fetchData()" class="p-3 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all shadow-sm hover:shadow-lg" title="Sincronizar Nuvem"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                    <button onclick="App.logout()" class="p-3 text-rose-400 bg-rose-500/10 hover:bg-rose-500 hover:text-white rounded-xl transition-all shadow-sm hover:shadow-lg" title="Sair do Matrix"><i data-lucide="power" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+        </div>
+        <nav class="px-8 flex gap-2">
+            <button onclick="App.switchTab('view-users')" id="tab-users" class="tab-active tab-btn px-6 py-4 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-[0.2em] transition-all rounded-t-xl"><i data-lucide="key" class="w-4 h-4 inline-block mr-2 mb-0.5"></i> Acessos</button>
+            <button onclick="App.switchTab('view-colabs')" id="tab-colabs" class="tab-btn px-6 py-4 text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-[0.2em] transition-all rounded-t-xl"><i data-lucide="database" class="w-4 h-4 inline-block mr-2 mb-0.5"></i> Base DHO</button>
+        </nav>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 overflow-y-auto custom-scroll p-6 md:p-10 z-20 relative">
+        <!-- ABA: USUÁRIOS -->
+        <div id="view-users" class="animate-fade-in block max-w-7xl mx-auto space-y-6">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <h2 class="text-2xl font-black text-white tracking-widest flex items-center gap-3"><i data-lucide="terminal" class="text-rose-500 w-6 h-6"></i> Gestão de Contas</h2>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-[0.2em] mt-2 font-bold ml-9">Conectado ao UserData.xlsx</p>
+                </div>
+                <button onclick="App.openUserModal()" class="bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white px-6 py-3.5 rounded-2xl text-[10px] font-black transition-all shadow-[0_10px_20px_-10px_rgba(225,29,72,0.6)] hover:scale-105 active:scale-95 flex items-center gap-2 uppercase tracking-widest border border-rose-400/20"><i data-lucide="user-plus" class="w-4 h-4"></i> Criar Acesso</button>
+            </div>
+            <div class="bg-navy-900/60 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden relative">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-600 to-purple-600"></div>
+                <div class="overflow-x-auto p-2">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="text-gray-500 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                            <tr><th class="px-6 py-5">Identificação</th><th class="px-6 py-5">Exibição</th><th class="px-6 py-5">Nível de Poder</th><th class="px-6 py-5 text-right">Controles</th></tr>
+                        </thead>
+                        <tbody id="table-users" class="divide-y divide-white/5"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA: COLABORADORES -->
+        <div id="view-colabs" class="animate-fade-in hidden max-w-7xl mx-auto space-y-6">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <h2 class="text-2xl font-black text-white tracking-widest flex items-center gap-3"><i data-lucide="server" class="text-indigo-500 w-6 h-6"></i> Base de Colaboradores</h2>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-[0.2em] mt-2 font-bold ml-9">Conectado ao ColaboradoresData.xlsx</p>
+                </div>
+                <button onclick="App.openColabModal()" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white px-6 py-3.5 rounded-2xl text-[10px] font-black transition-all shadow-[0_10px_20px_-10px_rgba(79,70,229,0.6)] hover:scale-105 active:scale-95 flex items-center gap-2 uppercase tracking-widest border border-indigo-400/20"><i data-lucide="user-plus" class="w-4 h-4"></i> Forçar Registro</button>
+            </div>
+            <div class="bg-navy-900/60 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden relative">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 to-blue-500"></div>
+                <div class="overflow-x-auto p-2">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="text-gray-500 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                            <tr><th class="px-6 py-5">Matrícula / Perfil</th><th class="px-6 py-5">Líder Alocado</th><th class="px-6 py-5">Estado</th><th class="px-6 py-5 text-right">Controles</th></tr>
+                        </thead>
+                        <tbody id="table-colabs" class="divide-y divide-white/5"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL: USUÁRIOS -->
+    <div id="modalUser" class="fixed inset-0 bg-navy-950/90 z-50 hidden flex-col items-center justify-center p-4 backdrop-blur-xl animate-fade-in">
+        <div class="bg-navy-900/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] w-full max-w-md overflow-hidden border border-white/10 animate-slide-up relative">
+            <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-rose-500/50 to-transparent"></div>
+            <div class="bg-navy-950/50 px-8 py-6 flex justify-between items-center border-b border-white/5">
+                <h2 id="modalUserTitle" class="text-xs font-black uppercase tracking-[0.2em] text-rose-500 flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4"></i> Protocolo de Acesso</h2>
+                <button type="button" onclick="App.closeModal('modalUser')" class="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="App.saveUser(event)" class="p-8 space-y-6">
+                <input type="hidden" id="u-spId">
+                <div><label class="label-clean">ID (Usuário)</label><input type="text" id="u-id" required class="input-clean"></div>
+                <div><label class="label-clean">Senha</label><input type="text" id="u-pass" required class="input-clean"></div>
+                <div><label class="label-clean">Nome Completo</label><input type="text" id="u-name" required class="input-clean"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="label-clean">Nível de Poder</label>
+                        <select id="u-role" onchange="App.toggleSupervisorField()" required class="input-clean cursor-pointer">
+                            <option value="Admin">Admin (TI)</option>
+                            <option value="Facilitador">Facilitador DHO</option>
+                            <option value="Lider">Líder</option>
+                            <option value="Supervisor">Supervisor</option>
+                        </select>
+                    </div>
+                    <div id="supervisorBox">
+                        <label class="label-clean">Supervisor Alocado</label>
+                        <select id="u-supervisor" class="input-clean cursor-pointer">
+                            <option value="João Mauricio">João Mauricio</option>
+                            <option value="-">Nenhum</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="App.closeModal('modalUser')" class="flex-1 bg-white/5 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-white/10 transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_-10px_rgba(225,29,72,0.6)]">Injetar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: COLABORADORES -->
+    <div id="modalColab" class="fixed inset-0 bg-navy-950/90 z-50 hidden flex-col items-center justify-center p-4 backdrop-blur-xl animate-fade-in">
+        <div class="bg-navy-900/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] w-full max-w-lg overflow-hidden border border-white/10 animate-slide-up relative">
+            <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+            <div class="bg-navy-950/50 px-8 py-6 flex justify-between items-center border-b border-white/5">
+                <h2 id="modalColabTitle" class="text-xs font-black uppercase tracking-[0.2em] text-indigo-400 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Editar Matriz</h2>
+                <button type="button" onclick="App.closeModal('modalColab')" class="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form onsubmit="App.saveColab(event)" class="p-8 space-y-6">
+                <input type="hidden" id="c-spId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="label-clean">Matrícula</label><input type="number" id="c-id" required class="input-clean"></div>
+                    <div><label class="label-clean">Status Vital</label><select id="c-status" class="input-clean cursor-pointer"><option value="Ativo">Ativo</option><option value="Desligado">Desligado</option></select></div>
+                </div>
+                <div><label class="label-clean">Nome Completo</label><input type="text" id="c-name" required class="input-clean"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="label-clean">Comandante (Líder)</label><input type="text" id="c-leader" required class="input-clean"></div>
+                    <div><label class="label-clean">Setor Operacional</label>
+                        <select id="c-sector" required class="input-clean cursor-pointer">
+                            <option value="Recebimento">Recebimento</option><option value="Armazenagem">Armazenagem</option>
+                            <option value="Separação">Separação</option><option value="Expedição">Expedição</option>
+                            <option value="Produção">Produção</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="App.closeModal('modalColab')" class="flex-1 bg-white/5 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-white/10 transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_-10px_rgba(79,70,229,0.6)]">Injetar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT ORIGINAL INTACTO -->
+    <script>
+        const URL_LER = "https://default863b40a279194b128e0e7678554bee.21.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/21/workflows/3068ae606a9d47c4967b39b43e2f157f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=vnTdxDEE1wSXgDnHWTgIVh-WIuVifc8RLNbj7Y4xTtw";
+        const URL_SALVAR_USUARIO = "https://default863b40a279194b128e0e7678554bee.21.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/a6b77f5bb818479f986d0972cf739473/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=txK260vhFVS6RJ1hahS5VlH6eE0IReW47yqamNHZDhE";
+        const URL_SALVAR_COLABORADOR = "https://default863b40a279194b128e0e7678554bee.21.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/1b1b45bc522943dea6a7030485f680f6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=FYOgLPg178X4sEFRmrgNYi9zsVwGFLpr05BkGbE6XtI";
+
+        const App = {
+            state: { users: [], colabs: [] },
+            init() {
+                lucide.createIcons();
+                document.getElementById('userNameDisplay').innerText = sessionStorage.getItem('ha_user_name') || 'Deus da TI';
+                if(sessionStorage.getItem('ha_user_role') !== 'Admin') { alert("Acesso Negado."); window.location.href = 'index.html'; } else { this.fetchData(); }
+            },
+            showLoad(msg) { document.getElementById('loadingText').innerText = msg; document.getElementById('loadingOverlay').classList.remove('hidden'); document.getElementById('loadingOverlay').classList.add('flex'); },
+            hideLoad() { document.getElementById('loadingOverlay').classList.add('hidden'); document.getElementById('loadingOverlay').classList.remove('flex'); },
+            closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); },
+            switchTab(viewId) {
+                document.getElementById('view-users').classList.add('hidden'); document.getElementById('view-colabs').classList.add('hidden');
+                document.getElementById('tab-users').classList.remove('tab-active', 'text-mustard-500'); document.getElementById('tab-colabs').classList.remove('tab-active', 'text-mustard-500');
+                document.getElementById(viewId).classList.remove('hidden'); 
+                document.getElementById(viewId === 'view-users' ? 'tab-users' : 'tab-colabs').classList.add('tab-active', 'text-mustard-500');
+            },
+            logout() { sessionStorage.clear(); window.location.href = 'index.html'; },
+            async fetchData() {
+                this.showLoad("Extraindo Dados da Nuvem...");
+                try {
+                    const res = await fetch(URL_LER);
+                    if(!res.ok) throw new Error("Falha HTTP");
+                    const data = await res.json();
+                    const getValSeguro = (obj, posiblesKeys) => { for (let key of posiblesKeys) { if (obj[key] !== undefined && obj[key] !== null) return obj[key]; } return ''; };
+                    this.state.users = (data.usuarios || []).filter(u => getValSeguro(u, ['Nome', 'nome']).toString() !== "[EXCLUÍDO]").map(u => ({
+                        spId: getValSeguro(u, ['spId', 'ID_User', 'usuario']).toString().trim(), 
+                        id: getValSeguro(u, ['ID_User', 'usuario']).toString().trim(), 
+                        pass: getValSeguro(u, ['Senha', 'senha']).toString().trim(), 
+                        name: getValSeguro(u, ['Nome', 'nome']).toString(), 
+                        role: getValSeguro(u, ['Role', 'cargo', 'permissoes']).toString(),
+                        supervisor: getValSeguro(u, ['Supervisor', 'permissoes']).toString()
+                    }));
+                    this.state.colabs = (data.colaboradores || []).filter(c => getValSeguro(c, ['nome', 'Nome', 'Colaborador']).toString() !== "[EXCLUÍDO]").map(c => ({
+                        spId: getValSeguro(c, ['spId', 'matricula', 'Matricula']).toString().trim(), 
+                        id: getValSeguro(c, ['matricula', 'Matricula']).toString().trim(), 
+                        name: getValSeguro(c, ['nome', 'Nome', 'Colaborador']).toString(), 
+                        leader: getValSeguro(c, ['lider', 'Lider']).toString(), 
+                        status: getValSeguro(c, ['status', 'Status']).toString() || 'Ativo',
+                        sector: getValSeguro(c, ['Setor_Principal', 'setor', 'treinamentosFinalizados']).toString()
+                    }));
+                    this.renderUsers(); this.renderColabs(); this.hideLoad();
+                } catch(e) { this.hideLoad(); alert("Erro de conexão. Verifique o fluxo no Power Automate."); }
+            },
+            renderUsers() {
+                const tbody = document.getElementById('table-users'); tbody.innerHTML = '';
+                this.state.users.forEach(u => {
+                    if(!u.id) return;
+                    let rCol = u.role === 'Admin' ? 'rose' : (u.role === 'Facilitador' ? 'indigo' : 'mustard');
+                    let deleteBtn = u.id !== '4dm1n' ? `<button onclick="App.deleteUser('${u.spId}', '${u.name}')" class="p-2 bg-rose-500/10 hover:bg-rose-500/30 text-rose-400 rounded-lg transition border border-rose-500/20 shadow-sm ml-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '';
+                    tbody.innerHTML += `
+                    <tr class="hover:bg-white/5 transition border-b border-white/5">
+                        <td class="px-6 py-4 text-xs font-mono text-gray-400 font-bold">${u.id}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-white">${u.name} ${u.supervisor && u.supervisor !== '-' ? `<br><span class="text-[9px] text-gray-500 font-normal">Sup: ${u.supervisor}</span>` : ''}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 bg-${rCol}-500/20 text-${rCol}-400 border border-${rCol}-500/30 rounded text-[9px] font-bold uppercase tracking-widest inline-block">${u.role}</span></td>
+                        <td class="px-6 py-4 text-right whitespace-nowrap"><button onclick="App.openUserModal('${u.id}')" class="p-2 bg-white/5 hover:bg-white/10 text-indigo-400 rounded-lg transition border border-white/10 shadow-sm"><i data-lucide="edit-2" class="w-4 h-4"></i></button>${deleteBtn}</td>
+                    </tr>`;
+                });
+                lucide.createIcons();
+            },
+            toggleSupervisorField() { const role = document.getElementById('u-role').value; const box = document.getElementById('supervisorBox'); if(box) { if(role === 'Lider') box.classList.remove('hidden'); else box.classList.add('hidden'); } },
+            openUserModal(id = null) {
+                document.getElementById('modalUserTitle').innerHTML = id ? `<i data-lucide="terminal" class="w-4 h-4 inline"></i> Alterar Acesso` : `<i data-lucide="terminal" class="w-4 h-4 inline"></i> Protocolo de Acesso`;
+                document.getElementById('u-spId').value = ''; document.getElementById('u-id').value = ''; document.getElementById('u-pass').value = ''; document.getElementById('u-name').value = ''; document.getElementById('u-role').value = 'Lider'; document.getElementById('u-supervisor').value = '-';
+                if(id) {
+                    const u = this.state.users.find(x => x.id === id);
+                    if(u) { document.getElementById('u-spId').value = u.spId; document.getElementById('u-id').value = u.id; document.getElementById('u-pass').value = u.pass; document.getElementById('u-name').value = u.name; document.getElementById('u-role').value = u.role; document.getElementById('u-supervisor').value = u.supervisor || '-'; }
+                }
+                this.toggleSupervisorField(); document.getElementById('modalUser').classList.remove('hidden'); document.getElementById('modalUser').classList.add('flex'); lucide.createIcons();
+            },
+            async saveUser(e) {
+                e.preventDefault(); this.showLoad("Injetando Usuário...");
+                const tempSpId = document.getElementById('u-spId').value.trim();
+                const payload = { spId: tempSpId === "" ? "CRIAR" : tempSpId, usuario: document.getElementById('u-id').value, senha: document.getElementById('u-pass').value, nome: document.getElementById('u-name').value, cargo: document.getElementById('u-role').value, permissoes: document.getElementById('u-supervisor').value };
+                try {
+                    const res = await fetch(URL_SALVAR_USUARIO, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if(!res.ok) throw new Error(`Status ${res.status}`);
+                    this.closeModal('modalUser'); this.fetchData();
+                } catch(err) { 
+                    if(err.name === 'TypeError' || err.message.includes('Failed to fetch')) { this.closeModal('modalUser'); setTimeout(() => this.fetchData(), 1500); } else { this.hideLoad(); alert(`Erro: ${err.message}`); }
+                }
+            },
+            async deleteUser(spId, name) {
+                if(!confirm(`Excluir o acesso de "${name}"?`)) return;
+                this.showLoad("Revogando acesso...");
+                const payload = { spId: spId, usuario: "EXCLUIDO-" + Date.now(), senha: "N/A", nome: "[EXCLUÍDO]", cargo: "Inativo", permissoes: "-" };
+                try { await fetch(URL_SALVAR_USUARIO, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); this.fetchData(); } catch(err) { if(err.name === 'TypeError' || err.message.includes('Failed to fetch')) { setTimeout(() => this.fetchData(), 1500); } else { this.hideLoad(); alert("Erro ao excluir."); } }
+            },
+            renderColabs() {
+                const tbody = document.getElementById('table-colabs'); tbody.innerHTML = '';
+                this.state.colabs.forEach(c => {
+                    if(!c.id) return;
+                    let stat = c.status === 'Ativo' ? '<span class="text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 uppercase font-bold tracking-widest">Ativo</span>' : '<span class="text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded text-[10px] border border-rose-500/30 uppercase font-bold tracking-widest">Desligado</span>';
+                    let deleteBtn = `<button onclick="App.deleteColab('${c.spId}', '${c.name}')" class="p-2 bg-rose-500/10 hover:bg-rose-500/30 text-rose-400 rounded-lg transition border border-rose-500/20 shadow-sm ml-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                    tbody.innerHTML += `
+                    <tr class="hover:bg-white/5 transition border-b border-white/5 ${c.status === 'Desligado' ? 'opacity-50 grayscale' : ''}">
+                        <td class="px-6 py-4"><div class="text-sm font-bold text-white">${c.name}</div><div class="text-[10px] text-gray-500 font-mono mt-0.5">ID: ${c.id}</div></td>
+                        <td class="px-6 py-4 text-xs font-bold text-gray-400">${c.leader} <br><span class="text-gray-500 text-[9px] uppercase font-normal">${c.sector}</span></td>
+                        <td class="px-6 py-4">${stat}</td>
+                        <td class="px-6 py-4 text-right whitespace-nowrap"><button onclick="App.openColabModal('${c.id}')" class="p-2 bg-white/5 hover:bg-white/10 text-indigo-400 rounded-lg transition border border-white/10 shadow-sm"><i data-lucide="edit-2" class="w-4 h-4"></i></button>${deleteBtn}</td>
+                    </tr>`;
+                });
+                lucide.createIcons();
+            },
+            openColabModal(id = null) {
+                document.getElementById('modalColabTitle').innerHTML = id ? `<i data-lucide="user-plus" class="w-4 h-4 inline"></i> Alterar Matriz` : `<i data-lucide="user-plus" class="w-4 h-4 inline"></i> Injetar Matriz`;
+                document.getElementById('c-spId').value = ''; document.getElementById('c-id').value = ''; document.getElementById('c-name').value = ''; document.getElementById('c-leader').value = ''; document.getElementById('c-sector').value = 'Produção'; document.getElementById('c-status').value = 'Ativo';
+                if(id) {
+                    const c = this.state.colabs.find(x => x.id === id);
+                    if(c) { document.getElementById('c-spId').value = c.spId; document.getElementById('c-id').value = c.id; document.getElementById('c-name').value = c.name; document.getElementById('c-leader').value = c.leader; document.getElementById('c-sector').value = c.sector || 'Produção'; document.getElementById('c-status').value = c.status; }
+                }
+                document.getElementById('modalColab').classList.remove('hidden'); document.getElementById('modalColab').classList.add('flex'); lucide.createIcons();
+            },
+            async saveColab(e) {
+                e.preventDefault(); this.showLoad("Injetando Colaborador...");
+                const tempCspId = document.getElementById('c-spId').value.trim();
+                const payload = { spId: tempCspId === "" ? "CRIAR" : tempCspId, matricula: document.getElementById('c-id').value, treinamentosFinalizados: document.getElementById('c-sector').value, nome: document.getElementById('c-name').value, lider: document.getElementById('c-leader').value, status: document.getElementById('c-status').value, foto: "" };
+                try {
+                    const res = await fetch(URL_SALVAR_COLABORADOR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if(!res.ok) throw new Error(`Status ${res.status}`);
+                    this.closeModal('modalColab'); this.fetchData();
+                } catch(err) { 
+                    if(err.name === 'TypeError' || err.message.includes('Failed to fetch')) { this.closeModal('modalColab'); setTimeout(() => this.fetchData(), 1500); } else { this.hideLoad(); alert(`Erro: ${err.message}`); }
+                }
+            },
+            async deleteColab(spId, name) {
+                if(!confirm(`Excluir o colaborador "${name}"?`)) return;
+                this.showLoad("Removendo registro...");
+                const payload = { spId: spId, matricula: "EXCLUIDO-" + Date.now(), treinamentosFinalizados: "-", nome: "[EXCLUÍDO]", lider: "-", status: "Desligado", foto: "" };
+                try { await fetch(URL_SALVAR_COLABORADOR, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); this.fetchData(); } catch(err) { if(err.name === 'TypeError' || err.message.includes('Failed to fetch')) { setTimeout(() => this.fetchData(), 1500); } else { this.hideLoad(); alert("Erro ao excluir."); } }
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => { App.init(); });
+    </script>
+</body>
+</html>
