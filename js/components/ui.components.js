@@ -53,6 +53,7 @@ HA.UI = {
         return new Date(d.getTime() + d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     },
 
+    // --- NUEVO MODAL DE HISTORIAL CON DETALLES EXPANDIBLES ---
     openHistory(colabId) {
         const colab = HA.State.colabs.find(c => c.id.toString() === colabId.toString()); 
         const history = HA.State.trainings.filter(t => t.userId.toString() === colabId.toString());
@@ -77,11 +78,7 @@ HA.UI = {
             if (sysUser.role === 'Facilitador') { rCol = 'rose'; rIco = 'gem'; }
             else if (sysUser.role === 'Lider') { rCol = 'blue'; rIco = 'crown'; }
             else if (sysUser.role === 'Supervisor' || sysUser.role === 'Admin') { rCol = 'mustard'; rIco = 'shield-alert'; }
-            
-            roleHtml = `
-                <div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-${rCol}-500/10 border border-${rCol}-500/30 rounded-xl text-[10px] font-black text-${rCol}-400 uppercase tracking-widest shadow-md">
-                    <i data-lucide="${rIco}" class="w-3.5 h-3.5"></i> Membro: ${sysUser.role}
-                </div>`;
+            roleHtml = `<div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-${rCol}-500/10 border border-${rCol}-500/30 rounded-xl text-[10px] font-black text-${rCol}-400 uppercase tracking-widest shadow-md"><i data-lucide="${rIco}" class="w-3.5 h-3.5"></i> Membro: ${sysUser.role}</div>`;
         }
 
         let html = `
@@ -122,46 +119,79 @@ HA.UI = {
                     </div>
 
                     <div class="w-full md:w-2/3 p-8">
-                        <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Linha do Tempo de Treinamentos
-                        </h4>`;
+                        <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Linha do Tempo de Treinamentos</h4>`;
                         
-        if (history.length === 0) { 
-            html += `
-                <div class="p-10 text-center text-gray-500 font-medium bg-[#0f1523] rounded-3xl border border-white/5 shadow-inner flex flex-col items-center">
-                    <i data-lucide="inbox" class="w-10 h-10 mb-3 opacity-20"></i> Histórico Vazio. Nenhuma operação registrada.
-                </div>`; 
-        } else {
-            html += `<div class="space-y-6 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-[2px] before:bg-white/10">`;
-            
-            history.sort((a,b) => b.id - a.id).forEach(t => {
-                const isSuccess = t.stage === 'Finalizado'; 
-                const color = isSuccess ? 'emerald' : (t.stage === 'Reprovado' ? 'rose' : 'mustard');
-                const icon = isSuccess ? 'check' : (t.stage === 'Reprovado' ? 'x' : 'clock');
+            if (history.length === 0) { 
+                html += `<div class="p-10 text-center text-gray-500 font-medium bg-[#0f1523] rounded-3xl border border-white/5 shadow-inner flex flex-col items-center"><i data-lucide="inbox" class="w-10 h-10 mb-3 opacity-20"></i> Histórico Vazio. Nenhuma operação registrada.</div>`; 
+            } else {
+                html += `<div class="space-y-6 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-[2px] before:bg-white/10">`;
                 
-                html += `
-                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div class="flex items-center justify-center w-12 h-12 rounded-full border-[6px] border-[#070b14] bg-${color}-500/20 text-${color}-400 shadow-[0_0_15px_rgba(var(--color-${color}-500),0.3)] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-transform group-hover:scale-110">
-                        <i data-lucide="${icon}" class="w-5 h-5"></i>
-                    </div>
-                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-3xl border border-white/5 bg-[#0f1523] shadow-lg hover:border-${color}-500/50 transition-colors">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="font-black text-white text-sm tracking-wide leading-tight">${t.area}</div>
-                            <div class="text-[9px] text-gray-400 font-mono bg-[#070b14] px-2 py-1 rounded-md border border-white/5">
-                                ${this.formatDateBR(t.finalizationDate || t.endDate || t.startDate)}
+                history.sort((a,b) => b.id - a.id).forEach(t => {
+                    const isSuccess = t.stage === 'Finalizado'; 
+                    const color = isSuccess ? 'emerald' : (t.stage === 'Reprovado' ? 'rose' : 'mustard');
+                    
+                    // Renderização de Ocorrências para os detalhes
+                    let probsHtml = '';
+                    let arrProbs = Array.isArray(t.problemsLog) ? t.problemsLog : [];
+                    if (arrProbs.length === 0) {
+                        probsHtml = '<span class="text-gray-500 italic">Nenhuma ocorrência registrada.</span>';
+                    } else {
+                        probsHtml = arrProbs.map(p => `
+                            <div class="mb-1.5 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                                <span class="text-rose-400 font-mono text-[9px] block mb-0.5">${this.formatDateBR(p.date)}</span> 
+                                <span class="text-xs text-gray-300 leading-tight">${p.text}</span>
                             </div>
+                        `).join('');
+                    }
+
+                    html += `
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full border-[6px] border-[#070b14] bg-${color}-500/20 text-${color}-400 shadow-[0_0_15px_rgba(var(--color-${color}-500),0.3)] shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-transform group-hover:scale-110">
+                            <i data-lucide="${isSuccess ? 'check' : (t.stage === 'Reprovado' ? 'x' : 'clock')}" class="w-5 h-5"></i>
                         </div>
-                        <div class="text-[10px] text-gray-500 mb-5 uppercase tracking-widest font-bold">
-                            Por: <span class="text-white">${t.facilitator.split(' ')[0]}</span>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-3xl border border-white/5 bg-[#0f1523] shadow-lg hover:border-${color}-500/50 transition-colors">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-black text-white text-sm tracking-wide leading-tight">${t.area}</div>
+                                <div class="text-[9px] text-gray-400 font-mono bg-[#070b14] px-2 py-1 rounded-md border border-white/5">
+                                    ${this.formatDateBR(t.finalizationDate || t.endDate || t.startDate)}
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-gray-500 mb-5 uppercase tracking-widest font-bold">
+                                Por: <span class="text-white">${t.facilitator.split(' ')[0]}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center border-t border-white/5 pt-4">
+                                <span class="px-3 py-1.5 bg-${color}-500/10 text-${color}-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-${color}-500/20">
+                                    ${t.stage}
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-black text-white bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">Nota: ${t.score || '--'}</span>
+                                    
+                                    <!-- BOTAO VER DETALHES -->
+                                    <button onclick="document.getElementById('hist-det-${t.id}').classList.toggle('hidden')" class="bg-cyan-500/10 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/20 p-2 rounded-lg transition" title="Ver Detalhes do Treinamento">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- CAIXA DE DETALHES EXPANSIVEL -->
+                            <div id="hist-det-${t.id}" class="hidden mt-4 pt-4 border-t border-white/5 space-y-4">
+                                <div class="bg-[#070b14]/50 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                    <h5 class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><i data-lucide="book-open" class="w-3 h-3"></i> Relatório Teórico</h5>
+                                    <p class="text-[11px] text-gray-400 leading-relaxed whitespace-pre-wrap">${t.teoNotes || 'Sem registro.'}</p>
+                                </div>
+                                <div class="bg-[#070b14]/50 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                    <h5 class="text-[9px] font-black text-mustard-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><i data-lucide="wrench" class="w-3 h-3"></i> Avaliação Prática</h5>
+                                    <p class="text-[11px] text-gray-400 leading-relaxed whitespace-pre-wrap">${t.praNotes || 'Sem registro.'}</p>
+                                </div>
+                                <div class="bg-[#070b14]/50 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                    <h5 class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Ocorrências</h5>
+                                    <div>${probsHtml}</div>
+                                </div>
+                            </div>
+
                         </div>
-                        <div class="flex justify-between items-center border-t border-white/5 pt-4">
-                            <span class="px-3 py-1.5 bg-${color}-500/10 text-${color}-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-${color}-500/20">
-                                ${t.stage}
-                            </span>
-                            <span class="text-xs font-black text-white bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">Nota: ${t.score || '--'}</span>
-                        </div>
-                    </div>
-                </div>`;
+                    </div>`;
             }); 
             
             html += `</div>`;
@@ -225,14 +255,12 @@ HA.UI = {
             document.getElementById('f-turno').value = '';
             document.getElementById('f-photo').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'/%3E%3C/svg%3E";
 
-            // BLOQUEA LOS PASOS 2 Y 3 PARA QUE NO SE PUEDAN SALTAR
             btn2.disabled = true;
             btn3.disabled = true;
 
             this.switchStep(1);
         } 
         else {
-            // DESBLOQUEA LOS PASOS PORQUE YA ES UNA FICHA CREADA
             btn2.disabled = false;
             btn3.disabled = false;
 
@@ -266,8 +294,8 @@ HA.UI = {
                 document.getElementById('f-praNotes').value = t.praNotes || '';
                 document.getElementById('f-praDone').checked = t.accPraDone || false;
 
-                if (t.pdfUploaded) this.setLockState('Pdf');
-                if (t.emailSent) this.setLockState('Email');
+                if(t.pdfUploaded) this.setLockState('Pdf');
+                if(t.emailSent) this.setLockState('Email');
 
                 if (t.stage === 'Solicitado') {
                     this.switchStep(1);
@@ -297,7 +325,7 @@ HA.UI = {
             
             let leaderNameDisplay = c.leader || "Sem Líder Atribuído";
             const lUser = HA.State.users.find(u => u.name.toLowerCase() === leaderNameDisplay.toLowerCase() || u.name.toLowerCase().startsWith(leaderNameDisplay.toLowerCase() + ' '));
-            if (lUser) leaderNameDisplay = lUser.name;
+            if(lUser) leaderNameDisplay = lUser.name;
             
             document.getElementById('f-leader').value = leaderNameDisplay;
             document.getElementById('f-turno').value = c.turno || "Geral";
@@ -614,22 +642,22 @@ HA.UI = {
         if (!status || status === 'Pendente') { 
             badge.innerText = "Não Agendado"; 
             badge.className = "text-[11px] font-black text-mustard-400 bg-mustard-500/10 px-3.5 py-1.5 rounded-lg border border-mustard-500/20 uppercase tracking-widest";
-            if (btn) { btn.classList.remove('hidden'); btn.innerText = "Solicitar Aprovação"; }
+            if(btn) { btn.classList.remove('hidden'); btn.innerText = "Solicitar Aprovação"; }
             dateInput.classList.remove('opacity-50', 'cursor-not-allowed'); 
         } else if (status === 'Aguardando Líder') { 
             badge.innerText = "Aguardando"; 
             badge.className = "text-[11px] font-black text-mustard-400 bg-mustard-500/10 px-3.5 py-1.5 rounded-lg border border-mustard-500/20 uppercase tracking-widest";
-            if (btn) btn.classList.add('hidden'); 
+            if(btn) btn.classList.add('hidden'); 
             dateInput.classList.add('opacity-50', 'cursor-not-allowed'); 
         } else if (status === 'Aprovado') { 
             badge.innerText = "Aprovado"; 
             badge.className = "text-[11px] font-black text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-lg border border-emerald-500/30 uppercase tracking-widest";
-            if (btn) btn.classList.add('hidden'); 
+            if(btn) btn.classList.add('hidden'); 
             dateInput.classList.add('opacity-50', 'cursor-not-allowed'); 
         } else if (status === 'Recusado') { 
             badge.innerText = "Recusado"; 
             badge.className = "text-[11px] font-black text-rose-400 bg-rose-500/10 px-3.5 py-1.5 rounded-lg border border-rose-500/20 uppercase tracking-widest animate-pulse";
-            if (btn) { btn.classList.remove('hidden'); btn.innerText = `Reenviar`; }
+            if(btn) { btn.classList.remove('hidden'); btn.innerText = `Reenviar`; }
             dateInput.classList.remove('opacity-50', 'cursor-not-allowed'); 
         }
     },
@@ -637,7 +665,6 @@ HA.UI = {
     startTraining() {
         const mat = document.getElementById('f-userId').value; 
         const start = document.getElementById('f-startDate').value;
-        
         if (!mat || !start) return alert("Selecione o Colaborador e defina a Data de Início.");
         
         // DESBLOQUEA LOS PASOS AL INICIAR
@@ -717,7 +744,6 @@ HA.UI = {
         reader.readAsDataURL(file);
     },
     
-    // --- SOLUCIÓN AL DEADLOCK (PDF) ---
     async uploadPdf() {
         const base64 = document.getElementById('f-pdfBase64').value; 
         const idColab = document.getElementById('f-userId').value;
@@ -747,7 +773,6 @@ HA.UI = {
             alert("✅ Incubadora enviada e salva no SharePoint com Sucesso!"); 
             this.setLockState('Pdf'); 
             
-            // Si la ficha ya existe, la actualiza silenciosamente
             if (this.currentEditingId) {
                 const t = HA.State.trainings.find(x => x.id.toString() === this.currentEditingId.toString()); 
                 if (t) { t.pdfUploaded = true; HA.Data.safeSave(t); }
@@ -770,7 +795,6 @@ HA.UI = {
         }
     },
 
-    // --- SOLUCIÓN AL DEADLOCK (EMAIL) ---
     async generateEmail() {
         const idColab = document.getElementById('f-userId').value;
         if (!idColab) return alert("Selecione um colaborador primeiro.");
@@ -852,7 +876,7 @@ HA.UI = {
 
         if (stage === 'Finalizado') {
             if (!isPdfLocked || !isEmailLocked) {
-                alert("🛑 AÇÃO BLOQUEADA PELO SISTEMA:\n\nVocê não pode salvar este treinamento como 'Finalizado' sem antes completar a Auditoria de Cierre:\n\n1. Anexar e enviar a Incubadora Assinada (PDF) para a nuvem.\n2. Enviar o E-mail Oficial de Comunicação ao Líder.");
+                alert("🛑 AÇÃO BLOQUEADA PELO SISTEMA:\n\nVocê não pode salvar este treinamento como 'Finalizado' sem antes completar o Checklist Automatizado:\n\n1. Anexar e enviar a Incubadora Assinada (PDF) para a nuvem.\n2. Enviar o E-mail Oficial de Comunicação ao Líder.\n\nPor favor, cumpra esses passos antes de salvar.");
                 return; 
             }
         }
@@ -1251,7 +1275,7 @@ HA.UI = {
             if (success) { 
                 this.closeModal('modalInjectHistory'); 
                 document.getElementById('view-tray').classList.remove('hidden');
-                HA.Facilitator.switchTab('fins'); 
+                HA.Facilitator.switchTab('fins'); // Manda o cara pra ver o histórico salvo
                 alert("✅ Histórico Antigo Injetado com Sucesso!"); 
             }
         });
