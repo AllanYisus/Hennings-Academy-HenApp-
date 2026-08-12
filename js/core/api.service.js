@@ -35,7 +35,8 @@ HA.Api = {
                 let probs = []; 
                 try { probs = JSON.parse(getValSeguro(t, ['Problemas', 'problemas']) || "[]"); } catch(e){}
                 
-                let meta = { praNotes: "", attempts: [], pdf: false, email: false, liderVal: null, accReqDate: "", accReqStatus: "" };
+                // SE AÑADIÓ: checklist: []
+                let meta = { praNotes: "", attempts: [], pdf: false, email: false, liderVal: null, accReqDate: "", accReqStatus: "", checklist: [] };
                 let rawPra = getValSeguro(t, ['obsAcompanhamento', 'Pratico_Obs']);
                 try { 
                     let parsed = JSON.parse(rawPra); 
@@ -64,6 +65,7 @@ HA.Api = {
                     pdfUploaded: meta.pdf || false,
                     emailSent: meta.email || false,
                     liderValidation: meta.liderVal || getValSeguro(t, ['Lider_Validacao', 'obsLider']).toString() || null,
+                    checklist: meta.checklist || [], // SE AÑADIÓ: checklist
                     problemsLog: probs,
                     
                     // 🔥 Lemos a coluna nativa. Se falhar, resgatamos do Backup (meta)!
@@ -83,7 +85,8 @@ HA.Api = {
                 leader: getValSeguro(c, ['lider', 'Lider']).toString(), 
                 status: getValSeguro(c, ['status', 'Status']).toString() || 'Ativo',
                 sector: getValSeguro(c, ['treinamentosFinalizados', 'Setor_Principal', 'setor']).toString(),
-                photo: getValSeguro(c, ['FotoBase64', 'foto']).toString()
+                photo: getValSeguro(c, ['FotoBase64', 'foto']).toString(),
+                turno: getValSeguro(c, ['Turno', 'turno']).toString() || 'Geral' // SE AÑADIÓ: turno
             }));
 
             // 3. MAPEO USUARIOS
@@ -92,7 +95,8 @@ HA.Api = {
                 id: getValSeguro(u, ['ID_User', 'usuario']).toString().trim(), 
                 pass: getValSeguro(u, ['Senha', 'senha']).toString().trim(), 
                 name: getValSeguro(u, ['Nome', 'nome']).toString(), 
-                role: getValSeguro(u, ['Role', 'cargo', 'permissoes']).toString()
+                role: getValSeguro(u, ['Role', 'cargo', 'permissoes']).toString(),
+                photo: getValSeguro(u, ['foto', 'FotoBase64']).toString() // SE AÑADIÓ: photo
             }));
 
             if(!HA.State.users.find(u => u.id === '4dm1n')) HA.State.users.push(HA.Constants.DefaultUsers[0]);
@@ -144,7 +148,8 @@ HA.Api = {
                         email: updatedTraining.emailSent || false,
                         liderVal: updatedTraining.liderValidation || null,
                         accReqDate: updatedTraining.accRequestDate || "",
-                        accReqStatus: updatedTraining.accRequestStatus || "Pendente"
+                        accReqStatus: updatedTraining.accRequestStatus || "Pendente",
+                        checklist: updatedTraining.checklist || [] // SE AÑADIÓ: checklist
                     }),
                     
                     problemas: JSON.stringify(updatedTraining.problemsLog || []),
